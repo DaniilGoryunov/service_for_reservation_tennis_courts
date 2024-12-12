@@ -33,7 +33,8 @@ COMMENT ON TABLE court_prices IS 'Цены на теннисные корты в
 CREATE TABLE coaches (
     coach_id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    experience INT NOT NULL
+    experience INT NOT NULL,
+    price INT
 );
 
 COMMENT ON TABLE coaches IS 'Информация о тренерах';

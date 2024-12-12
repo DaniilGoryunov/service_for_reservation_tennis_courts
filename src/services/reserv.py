@@ -93,3 +93,38 @@ def get_available_coaches(reservation_time):
     except Exception as e:
         st.error(f"Ошибка при получении тренеров: {e}")
         return []
+    
+# Функция для отмены записи на корт
+def cancel_reservation(reservation_id):
+    query = """
+        DELETE FROM reservations
+        WHERE reservation_id = %s;
+    """
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (reservation_id,))
+                conn.commit()
+                return True
+    except Exception as e:
+        st.error(f"Ошибка при отмене записи: {e}")
+        return False
+
+# Функция для получения записей пользователя на корт
+def get_user_reservations(user_id):
+    query = """
+        SELECT r.reservation_id, r.reservation_time, r.duration, c.surface, co.name AS coach_name
+        FROM reservations r
+        JOIN courts c ON r.court_id = c.court_id
+        LEFT JOIN coaches co ON r.coach_id = co.coach_id
+        WHERE r.user_id = %s
+        ORDER BY r.reservation_time DESC;
+    """
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (user_id,))
+                return cur.fetchall()
+    except Exception as e:
+        st.error(f"Ошибка при получении записей: {e}")
+        return []

@@ -2,7 +2,7 @@
 
 для подключения к бд - docker exec -it postgres_container psql -U habrpguser -d habrdb
 
-копирование данных в - docker cp /Users/admin/Desktop/MAI/Third/base/курсач/sample_course_work/migrations/ddl.sql postgres_container:/tmp/ddl.sql
+копирование данных в - docker cp /Users/admin/Desktop/MAI/Third/base/курсач/service_for_reservation_tennis_courts/migrations/ddl.sql postgres_container:/tmp/ddl.sql
 
 неистово все сносим - DO $$ DECLARE
        r RECORD;

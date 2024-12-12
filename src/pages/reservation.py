@@ -41,3 +41,4 @@ def show_reservation_page():
                 reserve_user_court(st.session_state.user_id, court_id, reservation_datetime, st.session_state.duration_minutes, coach_id)
     else:
         st.write("Нет доступных кортов для выбранного времени.")
+

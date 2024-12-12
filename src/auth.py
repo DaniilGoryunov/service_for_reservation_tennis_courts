@@ -23,11 +23,18 @@ def check_password(password, hashed_password):
 
 def register_user(username, password):
     password_hash = hash_password(password)
-    query = "INSERT INTO users (username, password_hash) VALUES (%s, %s) RETURNING user_id;"
+    query_check = "SELECT COUNT(*) FROM users WHERE username = %s;"
+    query_insert = "INSERT INTO users (username, password_hash) VALUES (%s, %s) RETURNING user_id;"
     
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
-            cur.execute(query, (username, password_hash))
+            # Проверяем, существует ли пользователь с таким именем
+            cur.execute(query_check, (username,))
+            if cur.fetchone()[0] > 0:
+                return None  # Пользователь уже существует
+            
+            # Если пользователь не существует, выполняем вставку
+            cur.execute(query_insert, (username, password_hash))
             user_id = cur.fetchone()[0]
             conn.commit()
     return user_id
