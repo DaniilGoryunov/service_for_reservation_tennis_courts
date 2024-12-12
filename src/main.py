@@ -7,7 +7,7 @@ def main():
 
     if 'user' in st.session_state:
         st.success(f"Вы вошли как {st.session_state.user}")
-        show_reservation_page()  # Показать страницу резервирования
+        show_reservation_page()
     else:
         if st.sidebar.button("Войти", key="login_sidebar"):
             st.session_state.show_auth = True

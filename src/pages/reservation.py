@@ -1,81 +1,43 @@
 import streamlit as st
-import pandas as pd
-from datetime import datetime, timedelta
-import psycopg2
-from dotenv import load_dotenv
+from datetime import datetime
 import os
-
-load_dotenv("env.env")
-
-DB_CONFIG = {
-    "dbname": os.getenv("DB_NAME"),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-    "host": os.getenv("DB_HOST"),
-    "port": os.getenv("DB_PORT"),
-}
-
-def get_available_courts(reservation_time, duration):
-    query = """
-        SELECT c.court_id, c.surface, cp.price
-        FROM courts c
-        JOIN court_prices cp ON c.court_id = cp.court_id
-        WHERE cp.start_time <= %s::time AND cp.end_time > %s::time
-        AND NOT EXISTS (
-            SELECT 1 FROM reservations r
-            WHERE r.court_id = c.court_id
-            AND r.reservation_time < %s
-            AND (r.reservation_time + INTERVAL '1 minute' * r.duration) > %s
-        );
-    """
-    with psycopg2.connect(**DB_CONFIG) as conn:
-        with conn.cursor() as cur:
-            cur.execute(query, (reservation_time.time(), reservation_time.time(), 
-                                reservation_time + timedelta(minutes=duration), reservation_time))
-            return cur.fetchall()
-
-def reserve_court(user_id, court_id, reservation_time, duration):
-    query = """
-        INSERT INTO reservations (user_id, court_id, reservation_time, duration)
-        VALUES (%s, %s, %s, %s);
-    """
-    try:
-        with psycopg2.connect(**DB_CONFIG) as conn:
-            with conn.cursor() as cur:
-                cur.execute(query, (user_id, court_id, reservation_time, duration))
-                conn.commit()
-                st.success("Резервирование успешно выполнено!")
-    except Exception as e:
-        st.error(f"Ошибка при резервировании: {e}")
-
+from services.reserv import get_available_coaches, get_available_courts, reserve_user_court
+# Функция для отображения страницы с резервированием
 def show_reservation_page():
-    if 'user' not in st.session_state:
-        st.warning("Пожалуйста, войдите в систему, чтобы продолжить.")
-        return
+    # Инициализация значений в session_state, если они еще не установлены
+    if 'reservation_date' not in st.session_state:
+        st.session_state.reservation_date = datetime.today().date()  # Текущая дата по умолчанию
 
-    st.title("Резервирование теннисного корта")
+    if 'reservation_time' not in st.session_state:
+        st.session_state.reservation_time = datetime.today().time()  # Текущее время по умолчанию
 
-    # Выбор даты
-    reservation_date = st.date_input("Выберите дату резервирования")
-    
-    # Выбор времени
-    reservation_time = st.time_input("Выберите время резервирования")
-    
-    # Ввод количества часов
-    duration_hours = st.number_input("Введите количество часов для резервирования", min_value=1, value=1, step=1)
+    if 'duration_minutes' not in st.session_state:
+        st.session_state.duration_minutes = 60  # 60 минут по умолчанию
 
-    # Преобразование продолжительности в минуты для базы данных
-    duration_minutes = int(duration_hours * 60)
+    # Создаем поля для ввода данных
+    st.date_input("Выберите дату", key="reservation_date")
+    st.time_input("Выберите время", key="reservation_time")
+    st.number_input("Продолжительность в минутах", min_value=30, key="duration_minutes")
 
-    if st.button("Показать доступные корты"):
-        reservation_datetime = datetime.combine(reservation_date, reservation_time)
-        available_courts = get_available_courts(reservation_datetime, duration_minutes)
-        if available_courts:
-            for court in available_courts:
-                court_id, surface, price = court  # Распаковка данных о корте
-                st.write(f"Корт №{court_id}: {surface}, Цена: {price * duration_hours} руб.")
-                if st.button(f"Зарезервировать {court_id}", key=f"reserve_{court_id}"):
-                    st.write(f"Пользователь: {st.session_state.user_id}, Корт: {court_id}, Время: {reservation_datetime}, Продолжительность: {duration_minutes}")
-                    reserve_court(st.session_state.user_id, court_id, reservation_datetime, duration_minutes)
-        else:
-            st.warning("Нет доступных кортов на это время.")
+    # Выбор тренера (необязательный)
+    reservation_datetime = datetime.combine(st.session_state.reservation_date, st.session_state.reservation_time)
+    available_coaches = get_available_coaches(reservation_datetime)
+    coach_options = [f"{coach[1]}" for coach in available_coaches]
+    st.selectbox("Выберите тренера (необязательно)", ["Не выбрать"] + coach_options, key="coach_select")
+
+    # Проверяем наличие доступных кортов
+    available_courts = get_available_courts(reservation_datetime, st.session_state.duration_minutes)
+    if available_courts:
+        st.write("Доступные корты:")
+        for court in available_courts:
+            court_id, surface, price = court
+            st.write(f"Корт №{court_id}: {surface}, Цена: {price * st.session_state.duration_minutes / 60} руб.")
+            
+            # Кнопка для резервирования корта
+            if st.button(f"Зарезервировать {court_id}", key=f"reserve_{court_id}"):
+                coach_id = None
+                if st.session_state.coach_select != "Не выбрать":
+                    coach_id = available_coaches[coach_options.index(st.session_state.coach_select)][0]
+                reserve_user_court(st.session_state.user_id, court_id, reservation_datetime, st.session_state.duration_minutes, coach_id)
+    else:
+        st.write("Нет доступных кортов для выбранного времени.")

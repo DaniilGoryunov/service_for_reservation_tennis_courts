@@ -40,10 +40,3 @@ if __name__ == "__main__":
             "123456789012' or 1=1; DROP TABLE suppliers_1; SELECT * FROM sales_details;--"
         )
     )
-
-
-# SELECT * FROM Users WHERE UserId = 105 OR 1=1;
-
-# SELECT * FROM Users WHERE Name ="John Doe" AND Pass ="myPass"
-
-# SELECT * FROM Users WHERE Name ="" or ""="" AND Pass ="" or ""=""

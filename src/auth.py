@@ -30,7 +30,6 @@ def register_user(username, password):
             cur.execute(query, (username, password_hash))
             user_id = cur.fetchone()[0]
             conn.commit()
-    
     return user_id
 
 def authenticate_user(username, password):
