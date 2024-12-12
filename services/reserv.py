@@ -67,7 +67,6 @@ def reserve_user_court(user_id, court_id, reservation_time, duration, coach_id=N
                 cur.execute(query, (user_id, court_id, reservation_time, duration, coach_id))
                 reservation_id = cur.fetchone()[0]  # Получаем ID резервирования
                 conn.commit()
-                st.success("Резервирование успешно выполнено!")
                 return reservation_id  # Возвращаем ID резервирования
     except Exception as e:
         st.error(f"Ошибка при резервировании: {e}")
@@ -122,3 +121,21 @@ def get_user_role(user_id):
     except Exception as e:
         st.error(f"Ошибка при получении роли пользователя: {e}")
         return None
+    
+def get_all_reservations():
+    query = """ 
+        SELECT r.reservation_id, r.reservation_time, r.duration, c.surface, u.username, co.name AS coach_name
+        FROM reservations r
+        JOIN courts c ON r.court_id = c.court_id
+        JOIN users u ON r.user_id = u.user_id
+        LEFT JOIN coaches co ON r.coach_id = co.coach_id
+        ORDER BY r.reservation_time DESC;
+    """
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query)
+                return cur.fetchall()
+    except Exception as e:
+        st.error(f"Ошибка при получении всех записей: {e}")
+        return []

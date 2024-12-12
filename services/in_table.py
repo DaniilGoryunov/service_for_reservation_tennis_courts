@@ -23,16 +23,9 @@ def add_user_as_coach(username, salary_8_12, salary_12_18, salary_18_22):
                 if not user_id:
                     return False
                 user_id = user_id[0]
-
-                # Обновляем роль пользователя
                 cur.execute(query_update_role, (username,))
-
-                # Добавляем в таблицу coaches
                 cur.execute(query_insert_coach, (user_id, username))
-
-                # Добавляем в таблицу coach_prices
                 cur.execute(query_insert_prices, (user_id, salary_8_12, user_id, salary_12_18, user_id, salary_18_22))
-
                 conn.commit()
                 return True
     except Exception as e:
@@ -60,7 +53,9 @@ def filter_reservations(reservations):
 # Отображение записей
 def display_reservations(reservations, role):
     if reservations:
-        st.write("Ваши текущие записи:")
+        if role == 'user': st.write("Ваши текущие записи:")
+        elif role == 'coach': st.write("Все ваши ученики")
+        else: st.write("Все записи")
 
         for reservation in reservations:
             if len(reservation) == 6:
@@ -74,25 +69,72 @@ def display_reservations(reservations, role):
 
             reservation_time_str = format_reservation_time(reservation_time)
 
-            coach_info = f"Тренер: {coach_name}" if coach_name else "Без тренера"
+            if coach_name:
+                if role == 'user':
+                    st.write(f"Тренер: {coach_name}") 
+                else:
+                    st.write(f"Ученик: {coach_name}") 
+            else:
+                st.write("Без тренера")
 
             st.write(f"- **Дата и время:** {reservation_time_str}")
             st.write(f"  **Длительность:** {duration} минут")
             st.write(f"  **Покрытие корта:** {surface}")
             if username:
                 st.write(f"  **Пользователь:** {username}")
-            if role == "user": st.write(f"  {coach_info}")
 
-            # Дополнительный функционал для admin и coach
-            if role in ["admin", "coach"]:
-                st.write(f"  **Пользователь:** {username}")
-                if st.button(f"Удалить запись №{reservation_id}", key=f"delete_{reservation_id}"):
-                    success = cancel_reservation(reservation_id)
-                    if success:
-                        st.success(f"Запись №{reservation_id} успешно удалена.")
-                    else:
-                        st.error(f"Не удалось удалить запись №{reservation_id}.")
+            if st.button(f"Удалить запись №{reservation_id}", key=f"delete_{reservation_id}"):
+                success = cancel_reservation(reservation_id)
+                if success:
+                    st.success(f"Запись №{reservation_id} успешно удалена.")
+                else:
+                    st.error(f"Не удалось удалить запись №{reservation_id}.")
 
             st.write("---")
     else:
         st.write("У вас пока нет записей на корты.")
+
+def get_salary_inputs(new_role):
+    if new_role == "coach":
+        salary_8_12 = st.number_input("Зарплата (08:00-12:00)", min_value=0.0, value=1000.0, step=100.0)
+        salary_12_18 = st.number_input("Зарплата (12:00-18:00)", min_value=0.0, value=1200.0, step=100.0)
+        salary_18_22 = st.number_input("Зарплата (18:00-22:00)", min_value=0.0, value=1400.0, step=100.0)
+    else:
+        salary_8_12 = salary_12_18 = salary_18_22 = 0.0
+    return salary_8_12, salary_12_18, salary_18_22
+
+def check_user_exists(username):
+    query_check_user = "SELECT COUNT(*) FROM users WHERE username = %s;"
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute(query_check_user, (username,))
+            if cur.fetchone()[0] == 0:
+                st.error(f"Пользователь {username} не существует.")
+                return False
+    return True
+
+def check_coach_exists(username):
+    query_check_coach = "SELECT COUNT(*) FROM coaches WHERE coach_id = (SELECT user_id FROM users WHERE username = %s);"
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute(query_check_coach, (username,))
+            if cur.fetchone()[0] > 0:
+                st.error(f"Пользователь {username} уже назначен тренером.")
+                return True
+    return False
+
+def change_user_role_to_user(username):
+    query_update_role = "UPDATE users SET role = 'user' WHERE username = %s;"
+    query_delete_coach_prices = "DELETE FROM coach_prices WHERE coach_id = (SELECT user_id FROM users WHERE username = %s);"
+    query_delete_coach = "DELETE FROM coaches WHERE coach_id = (SELECT user_id FROM users WHERE username = %s);"
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query_update_role, (username,))
+                cur.execute(query_delete_coach_prices, (username,))
+                cur.execute(query_delete_coach, (username,))
+                conn.commit()
+                return True
+    except Exception as e:
+        st.error(f"Ошибка при изменении роли пользователя {username}: {e}")
+        return False

@@ -37,3 +37,12 @@ def show_auth_page():
                     st.error("Не удалось получить user_id.")
             else:
                 st.error("Неверное имя пользователя или пароль.")
+
+    if 'user' in st.session_state:
+        if st.button("Выйти"):
+            del st.session_state.user
+            del st.session_state.user_id
+            st.success("Вы вышли из аккаунта.")
+
+
+show_auth_page()
