@@ -17,8 +17,6 @@ CREATE TABLE users (
 
 COMMENT ON TABLE users IS 'Информация о пользователях';
 
-COMMENT ON TABLE reservations IS 'Информация о резервациях теннисных кортов';
-
 -- Таблица для хранения цен на корты в зависимости от времени
 CREATE TABLE court_prices (
     court_id INT REFERENCES courts(court_id),
@@ -35,7 +33,6 @@ CREATE TABLE coaches (
     user_id INT REFERENCES users(user_id),
     coach_id serial primary KEY,  
     name VARCHAR(100) NOT NULL,
-    experience INT NOT NULL,
     price INT
 );
 
@@ -68,3 +65,5 @@ CREATE TABLE reservations (
     duration INT NOT NULL,
     coach_id INT REFERENCES coaches(coach_id) ON DELETE SET NULL
 );
+
+COMMENT ON TABLE reservations IS 'Информация о резервациях теннисных кортов';

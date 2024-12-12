@@ -72,27 +72,6 @@ def reserve_user_court(user_id, court_id, reservation_time, duration, coach_id=N
     except Exception as e:
         st.error(f"Ошибка при резервировании: {e}")
         return None
-
-# Функция для получения доступных тренеров
-def get_available_coaches(reservation_time):
-    query = """
-    SELECT c.coach_id, c.name 
-    FROM coaches c
-    WHERE NOT EXISTS (
-        SELECT 1 FROM reservations r
-        WHERE r.coach_id = c.coach_id
-        AND r.reservation_time <= %s
-        AND (r.reservation_time + INTERVAL '1 minute' * r.duration) > %s
-    );
-    """
-    try:
-        with psycopg2.connect(**DB_CONFIG) as conn:
-            with conn.cursor() as cur:
-                cur.execute(query, (reservation_time, reservation_time))
-                return cur.fetchall()
-    except Exception as e:
-        st.error(f"Ошибка при получении тренеров: {e}")
-        return []
     
 # Функция для отмены записи на корт
 def cancel_reservation(reservation_id):
@@ -127,42 +106,6 @@ def get_user_reservations(user_id):
                 return cur.fetchall()
     except Exception as e:
         st.error(f"Ошибка при получении записей: {e}")
-        return []
-    
-def get_all_reservations():
-    query = """
-        SELECT r.reservation_id, r.reservation_time, r.duration, c.surface, u.username, co.name AS coach_name
-        FROM reservations r
-        JOIN courts c ON r.court_id = c.court_id
-        JOIN users u ON r.user_id = u.user_id
-        LEFT JOIN coaches co ON r.coach_id = co.coach_id
-        ORDER BY r.reservation_time DESC;
-    """
-    try:
-        with psycopg2.connect(**DB_CONFIG) as conn:
-            with conn.cursor() as cur:
-                cur.execute(query)
-                return cur.fetchall()
-    except Exception as e:
-        st.error(f"Ошибка при получении всех записей: {e}")
-        return []
-
-def get_coach_reservations(coach_id):
-    query = """
-        SELECT r.reservation_id, r.reservation_time, r.duration, c.surface, u.username
-        FROM reservations r
-        JOIN courts c ON r.court_id = c.court_id
-        JOIN users u ON r.user_id = u.user_id
-        WHERE r.coach_id = %s
-        ORDER BY r.reservation_time DESC;
-    """
-    try:
-        with psycopg2.connect(**DB_CONFIG) as conn:
-            with conn.cursor() as cur:
-                cur.execute(query, (coach_id,))
-                return cur.fetchall()
-    except Exception as e:
-        st.error(f"Ошибка при получении записей тренера: {e}")
         return []
     
 def get_user_role(user_id):

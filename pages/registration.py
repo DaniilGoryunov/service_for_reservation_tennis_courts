@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
-from auth import register_user, authenticate_user, get_user_id 
+from services.auth import *
 
 load_dotenv("env.env")
 

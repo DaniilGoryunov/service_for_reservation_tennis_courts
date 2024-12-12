@@ -14,10 +14,10 @@ INSERT INTO court_prices (court_id, start_time, end_time, price) VALUES
 (3, '12:00:00', '18:00:00', 1100.00); -- Корт 3, цена с 12:00 до 18:00
 
 -- Вставка данных о тренерах
-INSERT INTO coaches (name, experience, price) VALUES
-('Иван Иванов', 5, 1000),
-('Петр Петров', 3, 1200),
-('Сергей Сергеев', 7, 1500);
+INSERT INTO coaches (name, price) VALUES
+('Иван Иванов', 1000),
+('Петр Петров', 1200),
+('Сергей Сергеев', 1500);
 
 -- Вставка данных о ценах на услуги тренеров
 INSERT INTO coach_prices (coach_id, start_time, end_time, price) VALUES
