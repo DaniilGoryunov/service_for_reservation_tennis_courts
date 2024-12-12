@@ -14,8 +14,6 @@ def main():
 
         if 'show_auth' in st.session_state and st.session_state.show_auth:
             show_auth_page()
-        else:
-            st.info("Пожалуйста, войдите в систему, чтобы продолжить.")
 
 if __name__ == "__main__":
     main()

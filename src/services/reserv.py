@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import datetime, timedelta
+from datetime import timedelta
 import psycopg2
 from dotenv import load_dotenv
 import os
@@ -128,3 +128,54 @@ def get_user_reservations(user_id):
     except Exception as e:
         st.error(f"Ошибка при получении записей: {e}")
         return []
+    
+def get_all_reservations():
+    query = """
+        SELECT r.reservation_id, r.reservation_time, r.duration, c.surface, u.username, co.name AS coach_name
+        FROM reservations r
+        JOIN courts c ON r.court_id = c.court_id
+        JOIN users u ON r.user_id = u.user_id
+        LEFT JOIN coaches co ON r.coach_id = co.coach_id
+        ORDER BY r.reservation_time DESC;
+    """
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query)
+                return cur.fetchall()
+    except Exception as e:
+        st.error(f"Ошибка при получении всех записей: {e}")
+        return []
+
+def get_coach_reservations(coach_id):
+    query = """
+        SELECT r.reservation_id, r.reservation_time, r.duration, c.surface, u.username
+        FROM reservations r
+        JOIN courts c ON r.court_id = c.court_id
+        JOIN users u ON r.user_id = u.user_id
+        WHERE r.coach_id = %s
+        ORDER BY r.reservation_time DESC;
+    """
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (coach_id,))
+                return cur.fetchall()
+    except Exception as e:
+        st.error(f"Ошибка при получении записей тренера: {e}")
+        return []
+    
+def get_user_role(user_id):
+    query = "SELECT role FROM users WHERE user_id = %s;"
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (user_id,))
+                result = cur.fetchone()
+                if result:
+                    return result[0]  
+                else:
+                    return None
+    except Exception as e:
+        st.error(f"Ошибка при получении роли пользователя: {e}")
+        return None

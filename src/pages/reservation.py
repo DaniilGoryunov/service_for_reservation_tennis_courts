@@ -42,3 +42,8 @@ def show_reservation_page():
     else:
         st.write("Нет доступных кортов для выбранного времени.")
 
+if 'user_id' in st.session_state:
+    show_reservation_page()
+else:
+    st.error("Вы не авторизованы. Пожалуйста, войдите в систему.")
+    

@@ -1,4 +1,4 @@
--- Таблица для хранения информации о теннисных кортах
+-- Таблица для хранения информации о теннисных кортам
 CREATE TABLE courts (
     court_id SERIAL PRIMARY KEY,
     surface VARCHAR(50) NOT NULL, 
@@ -11,7 +11,8 @@ COMMENT ON TABLE courts IS 'Информация о теннисных корт�
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
-    password_hash VARCHAR(128) NOT NULL
+    password_hash VARCHAR(128) NOT NULL,
+    role VARCHAR(50) NOT NULL
 );
 
 COMMENT ON TABLE users IS 'Информация о пользователях';
@@ -31,7 +32,8 @@ COMMENT ON TABLE court_prices IS 'Цены на теннисные корты в
 
 -- Создание таблицы для хранения информации о тренерах
 CREATE TABLE coaches (
-    coach_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(user_id),
+    coach_id serial primary KEY,  
     name VARCHAR(100) NOT NULL,
     experience INT NOT NULL,
     price INT
