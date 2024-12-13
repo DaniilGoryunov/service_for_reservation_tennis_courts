@@ -7,8 +7,9 @@ def main():
     if 'user' in st.session_state:
         st.success(f"Вы вошли как {st.session_state.user}")
     else:
-        st.error(f"Вы не авторизированны")
         show_auth_page()
+        if 'user' in st.session_state:
+            st.success(f"Вы вошли как {st.session_state.user}")
     
     if 'show_image' not in st.session_state:
         st.session_state.show_image = False
