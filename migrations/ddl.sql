@@ -49,13 +49,6 @@ CREATE TABLE coach_prices (
 
 COMMENT ON TABLE coach_prices IS 'Цены на услуги тренеров в зависимости от времени';
 
-CREATE TABLE users_roles (
-    role_id SERIAL PRIMARY KEY,
-    role_name VARCHAR(50) UNIQUE NOT NULL
-);
-
-COMMENT ON TABLE users_roles IS 'Роли пользователей';
-
 -- Таблица для хранения резерваций
 CREATE TABLE reservations (
     reservation_id SERIAL PRIMARY KEY,

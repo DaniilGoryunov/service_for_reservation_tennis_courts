@@ -4,7 +4,7 @@ from services.in_table import *
 from services.reserv import *
 
 def coach_page(user_id):
-    reservations_coach = get_coach_reservations(user_id)  # Получаем записи, где пользователь тренер
+    reservations_coach = get_coach_reservations(get_coach_id_by_user_id(user_id))  # Получаем записи, где пользователь тренер
     display_reservations(reservations_coach, role="coach")
     reservations = get_user_reservations(user_id)  
     display_reservations(reservations, role="user")
@@ -33,10 +33,11 @@ def get_available_coaches(reservation_time):
     
 def get_coach_reservations(coach_id):
     query = """
-        SELECT r.reservation_id, r.reservation_time, r.duration, c.surface, u.username
+        SELECT r.reservation_id, r.reservation_time, r.duration, c.surface, ch.name, u.username AS user_name
         FROM reservations r
         JOIN courts c ON r.court_id = c.court_id
         JOIN users u ON r.user_id = u.user_id
+        JOIN coaches ch ON r.coach_id = ch.coach_id
         WHERE r.coach_id = %s
         ORDER BY r.reservation_time DESC;
     """

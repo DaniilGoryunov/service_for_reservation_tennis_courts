@@ -108,8 +108,6 @@ def display_reservations(reservations, role):
             st.write(f" **Дата и время:** {reservation_time_str}")
             st.write(f"  **Длительность:** {duration} минут")
             st.write(f"  **Покрытие корта:** {surface}")
-            if username:
-                st.write(f"  **Пользователь:** {username}")
 
             if st.button(f"Удалить запись №{reservation_id}", key=f"delete_{reservation_id}"):
                 success = cancel_reservation(reservation_id)
