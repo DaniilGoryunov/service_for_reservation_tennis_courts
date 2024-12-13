@@ -5,46 +5,17 @@ from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 import os
 from roles.user import *
-
-load_dotenv("env.env")
-
-DB_CONFIG = {
-    "dbname": os.getenv("DB_NAME"),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-    "host": os.getenv("DB_HOST"),
-    "port": os.getenv("DB_PORT"),
-}
-
-# Функция для получения отзывов
-def fetch_reviews():
-    with psycopg2.connect(**DB_CONFIG) as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT user_id, review_text, rating, court_id FROM user_reviews")
-            reviews = cursor.fetchall()
-            return reviews
-
-# Функция для добавления отзыва
-def add_review(username, court_id, review_text, rating):
-    with psycopg2.connect(**DB_CONFIG) as conn:
-        with conn.cursor() as cursor:
-            cursor.execute(
-                "INSERT INTO user_reviews (user_id, court_id, review_text, rating) VALUES (%s, %s, %s, %s)",
-                (username, court_id, review_text, rating)
-            )
-            conn.commit()
-
-async def async_fetch_reviews():
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(ThreadPoolExecutor(), fetch_reviews)
-
-async def async_add_review(user_id, court_id, review_text, rating):
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(ThreadPoolExecutor(), add_review, user_id, court_id, review_text, rating)
+from services.reviews import *
 
 def show_reviews():
-# Асинхронный вызов для получения отзывов
+    # Асинхронный вызов для получения отзывов
+    if 'reviews_visible' not in st.session_state:
+        st.session_state.reviews_visible = False
+
     if st.button("Показать отзывы"):
+        st.session_state.reviews_visible = not st.session_state.reviews_visible
+
+    if st.session_state.reviews_visible:
         reviews = asyncio.run(async_fetch_reviews())
         st.write("Отзывы:")
         for review in reviews:
@@ -55,6 +26,7 @@ def show_reviews():
         user_id = st.session_state.get("user_id")
         user_reservations = get_user_reservations(user_id)
         court_ids = [reservation[4] for reservation in user_reservations]  # Предполагается, что court_id находится на позиции 1
+        court_ids = set(court_ids)
         court_id = st.selectbox("Выберите корт", court_ids)
         review_text = st.text_area("Текст отзыва")
         rating = st.slider("Рейтинг", 1, 5)

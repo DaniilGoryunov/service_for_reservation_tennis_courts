@@ -1,6 +1,5 @@
 from contextlib import contextmanager
 from dotenv import load_dotenv
-from psycopg2 import pool
 import atexit
 import os
 import psycopg2

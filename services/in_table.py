@@ -102,7 +102,8 @@ def display_reservations(reservations, role):
                     st.write(f"Ученик: {coach_name}") 
             else:
                 st.write("Без тренера")
-            st.write(f" **Пользователь:** {username}")
+            if role == 'user': st.write(f" **Номер корта** {username}")
+            else: st.write(f" **Пользователь** {username}")
             st.write(f" **Дата и время:** {reservation_time_str}")
             st.write(f"  **Длительность:** {duration} минут")
             st.write(f"  **Покрытие корта:** {surface}")
