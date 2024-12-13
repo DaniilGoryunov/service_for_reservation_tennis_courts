@@ -8,12 +8,12 @@ load_dotenv("env.env")
 def show_auth_page():
     st.title("Авторизация")
 
-    menu = st.selectbox("Выберите действие", ["Вход", "Регистрация"])
+    menu = st.selectbox("Выберите действие", ["Вход", "Регистрация"], key="auth_menu_unique")
 
     if menu == "Регистрация":
-        username = st.text_input("Имя пользователя")
-        password = st.text_input("Пароль", type="password")
-        confirm_password = st.text_input("Подтвердите пароль", type="password")
+        username = st.text_input("Имя пользователя", key="register_username")
+        password = st.text_input("Пароль", type="password", key="register_password")
+        confirm_password = st.text_input("Подтвердите пароль", type="password", key="confirm_password")
         
         if st.button("Зарегистрироваться"):
             if password == confirm_password:
@@ -22,8 +22,8 @@ def show_auth_page():
                 st.error("Пароли не совпадают!")
 
     elif menu == "Вход":
-        username = st.text_input("Имя пользователя")
-        password = st.text_input("Пароль", type="password")
+        username = st.text_input("Имя пользователя", key="login_username")
+        password = st.text_input("Пароль", type="password", key="login_password")
         if st.button("Войти", key="login_button"):
             if authenticate_user(username, password): 
                 user_id = get_user_id(username)  
