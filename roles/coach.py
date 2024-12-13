@@ -4,7 +4,6 @@ from services.in_table import *
 from services.reserv import *
 
 def coach_page(user_id):
-    st.subheader("Ваши записи как тренера")
     reservations_coach = get_coach_reservations(user_id)  # Получаем записи, где пользователь тренер
     display_reservations(reservations_coach, role="coach")
     reservations = get_user_reservations(user_id)  
@@ -54,7 +53,7 @@ def get_coach_reservations(coach_id):
 def add_user_as_coach(username, salary_8_12, salary_12_18, salary_18_22):
     query_get_user_id = "SELECT user_id FROM users WHERE username = %s;"
     query_update_role = "UPDATE users SET role = 'coach' WHERE username = %s;"
-    query_insert_coach = "INSERT INTO coaches (coach_id, name) VALUES (%s, %s);"
+    query_insert_coach = "INSERT INTO coaches (user_id, name) VALUES (%s, %s);"
     query_insert_prices = """
         INSERT INTO coach_prices (coach_id, start_time, end_time, price) VALUES
         (%s, '08:00:00', '12:00:00', %s),
@@ -70,9 +69,10 @@ def add_user_as_coach(username, salary_8_12, salary_12_18, salary_18_22):
                 if not user_id:
                     return False
                 user_id = user_id[0]
-                cur.execute(query_update_role, (username,))
+                coach_id = get_coach_id_by_user_id(user_id)
+                cur.execute(query_update_role, (username))
                 cur.execute(query_insert_coach, (user_id, username))
-                cur.execute(query_insert_prices, (user_id, salary_8_12, user_id, salary_12_18, user_id, salary_18_22))
+                cur.execute(query_insert_prices, (coach_id, salary_8_12, coach_id, salary_12_18, coach_id, salary_18_22))
                 conn.commit()
                 return True
     except Exception as e:

@@ -4,6 +4,7 @@ import os
 from services.reserv import *
 from services.in_table import *
 from roles.coach import *
+from roles.user import *
 
 def show_reservation_page():
     if 'reservation_date' not in st.session_state:
@@ -22,7 +23,8 @@ def show_reservation_page():
     reservation_datetime = datetime.datetime.combine(st.session_state.reservation_date, st.session_state.reservation_time)
 
     available_coaches = get_available_coaches(reservation_datetime)
-    if available_coaches:
+    role = get_user_role(st.session_state.get("user_id"))
+    if available_coaches and role != "coach":
         coach_options = [f"{coach[1]}" for coach in available_coaches]
     else:
         coach_options = []
@@ -49,6 +51,9 @@ def show_reservation_page():
         st.write("Нет доступных кортов для выбранного времени.")
 
 if 'user_id' in st.session_state:
-    show_reservation_page()
+    if get_user_role(st.session_state.get("user_id")) != 'admin':
+        show_reservation_page()
+    else:
+        st.error("Вы АДМИН. Пожалуйста, войдите в систему под user.")
 else:
     st.error("Вы не авторизованы. Пожалуйста, войдите в систему.")

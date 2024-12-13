@@ -1,19 +1,20 @@
 import streamlit as st
-from pages.registration import show_auth_page
-from pages.reservation import show_reservation_page
 
 def main():
     st.title("Резервирование теннисных кортов")
 
     if 'user' in st.session_state:
         st.success(f"Вы вошли как {st.session_state.user}")
-        show_reservation_page()
     else:
-        if st.sidebar.button("Войти", key="login_sidebar"):
-            st.session_state.show_auth = True
+        st.error(f"Вы не авторизированны. Пройдите во вкладку registrarion")
+    
+    if 'show_image' not in st.session_state:
+        st.session_state.show_image = False
 
-        if 'show_auth' in st.session_state and st.session_state.show_auth:
-            show_auth_page()
+    if st.button("Сюрприз"):
+        st.session_state.show_image = not st.session_state.show_image
 
+    if st.session_state.show_image:
+        st.image("images/моя_боль.png", width=500) 
 if __name__ == "__main__":
     main()

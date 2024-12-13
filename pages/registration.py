@@ -18,7 +18,6 @@ def show_auth_page():
         if st.button("Зарегистрироваться"):
             if password == confirm_password:
                 user_id = register_user(username, password)
-                st.success(f"Пользователь зарегистрирован с ID: {user_id}")
             else:
                 st.error("Пароли не совпадают!")
 

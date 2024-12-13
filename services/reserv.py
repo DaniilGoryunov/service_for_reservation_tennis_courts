@@ -106,22 +106,7 @@ def get_user_reservations(user_id):
     except Exception as e:
         st.error(f"Ошибка при получении записей: {e}")
         return []
-    
-def get_user_role(user_id):
-    query = "SELECT role FROM users WHERE user_id = %s;"
-    try:
-        with psycopg2.connect(**DB_CONFIG) as conn:
-            with conn.cursor() as cur:
-                cur.execute(query, (user_id,))
-                result = cur.fetchone()
-                if result:
-                    return result[0]  
-                else:
-                    return None
-    except Exception as e:
-        st.error(f"Ошибка при получении роли пользователя: {e}")
-        return None
-    
+
 def get_all_reservations():
     query = """ 
         SELECT r.reservation_id, r.reservation_time, r.duration, c.surface, u.username, co.name AS coach_name

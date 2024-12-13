@@ -2,6 +2,7 @@ import psycopg2
 from dotenv import load_dotenv
 import os
 import bcrypt
+import streamlit as st
 
 load_dotenv("env.env")
 
@@ -31,13 +32,16 @@ def register_user(username, password):
             # Проверяем, существует ли пользователь с таким именем
             cur.execute(query_check, (username,))
             if cur.fetchone()[0] > 0:
-                return None  
-            role = "user"
+                st.error("Пользователь с таким именем уже существует.")  # Добавлена проверка
+                return  
+            else: 
+                role = "user"
             
             # Если пользователь не существует, выполняем вставку
             cur.execute(query_insert, (username, password_hash, role))
             user_id = cur.fetchone()[0]
             conn.commit()
+            st.success(f"Пользователь зарегистрирован с ID: {user_id}")
     return user_id
 
 def authenticate_user(username, password):

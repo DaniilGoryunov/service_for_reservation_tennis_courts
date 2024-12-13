@@ -1,5 +1,4 @@
 import streamlit as st
-import psycopg2
 from services.reserv import *
 from services.in_table import *
 from roles.user import *

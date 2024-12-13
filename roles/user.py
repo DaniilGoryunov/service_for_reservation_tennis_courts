@@ -4,7 +4,6 @@ from services.reserv import *
 
 # Страница для пользователя
 def user_page(user_id):
-    st.subheader("Ваши записи на корты")
     reservations = get_user_reservations(user_id)  # Получаем записи пользователя
     display_reservations(reservations, role="user")
 
@@ -32,7 +31,23 @@ def manage_users():
             else:
                 st.error(f"Не удалось изменить роль пользователя {user_to_change}.")
         elif new_role == "user":
-            if change_user_role_to_user(user_to_change):
+            if change_coach_role_to_user(user_to_change):
                 st.success(f"Пользователь {user_to_change} успешно назначен пользователем.")
             else:
                 st.error(f"Ошибка при изменении роли пользователя {user_to_change}.")
+
+def get_user_role(user_id):
+    query = "SELECT role FROM users WHERE user_id = %s;"
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (user_id,))
+                result = cur.fetchone()
+                if result:
+                    return result[0]  
+                else:
+                    return None
+    except Exception as e:
+        st.error(f"Ошибка при получении роли пользователя: {e}")
+        return None
+    

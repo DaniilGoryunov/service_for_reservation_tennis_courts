@@ -41,7 +41,7 @@ COMMENT ON TABLE coaches IS 'Информация о тренерах';
 -- Создание таблицы для хранения цен на услуги тренеров
 CREATE TABLE coach_prices (
     coach_id INT REFERENCES coaches(coach_id),
-    start_time TIME, 
+    start_time TIME,
     end_time TIME, 
     price DECIMAL(10, 2),
     PRIMARY KEY (coach_id, start_time)
