@@ -5,6 +5,7 @@ from services.reserv import *
 
 def coach_page(user_id):
     reservations_coach = get_coach_reservations(get_coach_id_by_user_id(user_id))  # Получаем записи, где пользователь тренер
+    reservations_coach = filter_reservations(reservations_coach)
     display_reservations(reservations_coach, role="coach")
     reservations = get_user_reservations(user_id)  
     display_reservations(reservations, role="user")

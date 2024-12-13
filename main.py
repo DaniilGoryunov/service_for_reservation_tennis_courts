@@ -1,13 +1,21 @@
 import streamlit as st
+import asyncio
 
-def main():
+async def check_user_session():
+    if 'user' in st.session_state:
+        return True, st.session_state.user
+    else:
+        return False, None
+
+async def main():
     st.title("Резервирование теннисных кортов")
 
-    if 'user' in st.session_state:
-        st.success(f"Вы вошли как {st.session_state.user}")
+    is_authenticated, user = await check_user_session()
+    if is_authenticated:
+        st.success(f"Вы вошли как {user}")
     else:
-        st.error(f"Вы не авторизированны. Пройдите во вкладку registrarion")
-    
+        st.error("Вы не авторизированны. Пройдите во вкладку registrarion")
+
     if 'show_image' not in st.session_state:
         st.session_state.show_image = False
 
@@ -15,6 +23,7 @@ def main():
         st.session_state.show_image = not st.session_state.show_image
 
     if st.session_state.show_image:
-        st.image("images/моя_боль.png", width=500) 
+        st.image("images/моя_боль.png", width=500)
+
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

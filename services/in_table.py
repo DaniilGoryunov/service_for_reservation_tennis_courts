@@ -68,11 +68,7 @@ def format_reservation_time(reservation_time):
 
 # Функция фильтрации записей
 def filter_reservations(reservations):
-    filter_user = st.text_input("Фильтр по имени пользователя")
     filter_date = st.date_input("Фильтр по дате")
-
-    if filter_user:
-        reservations = [r for r in reservations if isinstance(r[4], str) and filter_user.lower() in r[4].lower()]
     if filter_date:
         reservations = [r for r in reservations if isinstance(r[1], datetime.datetime) and r[1].date() == filter_date]
 
@@ -80,12 +76,14 @@ def filter_reservations(reservations):
 
 # Отображение записей
 def display_reservations(reservations, role):
-    if reservations:
-        if role == 'user': st.title("Ваши текущие записи:")
-        elif role == 'coach': st.title("Все ваши ученики")
-        else: st.title("Все записи")
+    future_reservations = [r for r in reservations if isinstance(r[1], datetime.datetime) and r[1] > datetime.datetime.now()]
 
-        for reservation in reservations:
+    if future_reservations:
+        if role == 'user': st.title("Ваши будущие записи:")
+        elif role == 'coach': st.title("Все ваши будущие ученики")
+        else: st.title("Все будущие записи")
+
+        for reservation in future_reservations:
             if len(reservation) == 6:
                 reservation_id, reservation_time, duration, surface, username, coach_name = reservation
             elif len(reservation) == 5:
@@ -118,7 +116,7 @@ def display_reservations(reservations, role):
 
             st.write("---")
     else:
-        st.write("У вас пока нет записей на корты.")
+        st.write("У вас пока нет будущих записей на корты.")
 
 def get_salary_inputs(new_role):
     if new_role == "coach":
