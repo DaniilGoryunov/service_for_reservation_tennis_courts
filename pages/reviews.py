@@ -54,7 +54,7 @@ def show_reviews():
     with st.form("Добавить отзыв"):
         user_id = st.session_state.get("user_id")
         user_reservations = get_user_reservations(user_id)
-        court_ids = [reservation[5] for reservation in user_reservations]  # Предполагается, что court_id находится на позиции 1
+        court_ids = [reservation[4] for reservation in user_reservations]  # Предполагается, что court_id находится на позиции 1
         court_id = st.selectbox("Выберите корт", court_ids)
         review_text = st.text_area("Текст отзыва")
         rating = st.slider("Рейтинг", 1, 5)
