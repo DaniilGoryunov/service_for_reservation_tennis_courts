@@ -31,7 +31,7 @@ COMMENT ON TABLE court_prices IS 'Цены на теннисные корты в
 -- Создание таблицы для хранения информации о тренерах
 CREATE TABLE coaches (
     user_id INT REFERENCES users(user_id),
-    coach_id serial primary KEY,  
+    coach_id SERIAL PRIMARY KEY,  
     name VARCHAR(100) NOT NULL,
     price INT
 );
@@ -67,3 +67,15 @@ CREATE TABLE reservations (
 );
 
 COMMENT ON TABLE reservations IS 'Информация о резервациях теннисных кортов';
+
+-- Таблица для хранения отзывов пользователей
+CREATE TABLE user_reviews (
+    review_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+    court_id INT REFERENCES courts(court_id) ON DELETE CASCADE,
+    review_text TEXT NOT NULL,
+    rating INT CHECK (rating >= 1 AND rating <= 5),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON TABLE user_reviews IS 'Отзывы пользователей о теннисных кортах';

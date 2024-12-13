@@ -3,6 +3,20 @@ import psycopg2
 import datetime
 from services.reserv import *
 
+def fetch_ratings_for_court(court_id):
+    query = "SELECT rating FROM user_reviews WHERE court_id = %s;"
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (court_id,))
+                ratings = cur.fetchall()
+                if ratings:  # Проверяем, есть ли оценки
+                    return sum(r[0] for r in ratings) / len(ratings)  # Извлекаем оценки из кортежей
+                return 0  # Возвращаем 0, если нет оценок
+    except Exception as e:
+        st.error(f"Ошибка при получении оценок для корта {court_id}: {e}")
+        return 0  # Возвращаем 0 в случае ошибки
+
 def get_coach_id_by_user_id(user_id):
     query = "SELECT coach_id FROM coaches WHERE user_id = %s;"
     try:

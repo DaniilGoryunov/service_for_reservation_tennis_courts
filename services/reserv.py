@@ -91,7 +91,7 @@ def cancel_reservation(reservation_id):
 # Функция для получения записей пользователя на корт
 def get_user_reservations(user_id):
     query = """
-        SELECT r.reservation_id, r.reservation_time, r.duration, c.surface, co.name AS coach_name
+        SELECT r.reservation_id, r.court_id, r.reservation_time, r.duration, c.surface, co.name AS coach_name
         FROM reservations r
         JOIN courts c ON r.court_id = c.court_id
         LEFT JOIN coaches co ON r.coach_id = co.coach_id

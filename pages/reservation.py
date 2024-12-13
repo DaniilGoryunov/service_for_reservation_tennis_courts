@@ -38,7 +38,8 @@ def show_reservation_page():
         for court in available_courts:
             court_id, surface, price = court
             total_price = price * st.session_state.duration_minutes / 60 
-            st.write(f"Корт №{court_id}: {surface}, Цена: {total_price} руб.")
+            average_rating = fetch_ratings_for_court(court_id)  
+            st.write(f"Корт №{court_id}: {surface}, Цена: {total_price} руб., Средняя оценка: {average_rating:.1f}")
 
             if st.button(f"Зарезервировать {court_id}", key=f"reserve_{court_id}"):
                 coach_id = None
