@@ -3,6 +3,12 @@ from datetime import timedelta
 import psycopg2
 from dotenv import load_dotenv
 import os
+from services.redis_service import (
+    cache_user_reservations, get_cached_user_reservations,
+    cache_coach_reservations, get_cached_coach_reservations,
+    cache_all_reservations, get_cached_all_reservations,
+    invalidate_reservation_cache
+)
 
 # Загружаем переменные окружения из файла .env
 load_dotenv("env.env")
@@ -65,31 +71,54 @@ def reserve_user_court(user_id, court_id, reservation_time, duration, coach_id=N
                     return None
 
                 cur.execute(query, (user_id, court_id, reservation_time, duration, coach_id))
-                reservation_id = cur.fetchone()[0]  # Получаем ID резервирования
+                reservation_id = cur.fetchone()[0]
                 conn.commit()
-                return reservation_id  # Возвращаем ID резервирования
+                
+                # Инвалидируем кэш после создания новой резервации
+                invalidate_reservation_cache(user_id=user_id, coach_id=coach_id)
+                
+                return reservation_id
     except Exception as e:
         st.error(f"Ошибка при резервировании: {e}")
         return None
     
 # Функция для отмены записи на корт
 def cancel_reservation(reservation_id):
-    query = """
-        DELETE FROM reservations
-        WHERE reservation_id = %s;
+    # Сначала получаем информацию о резервации для инвалидации кэша
+    query_get_info = """
+        SELECT user_id, coach_id FROM reservations WHERE reservation_id = %s;
+    """
+    query_delete = """
+        DELETE FROM reservations WHERE reservation_id = %s;
     """
     try:
         with psycopg2.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
-                cur.execute(query, (reservation_id,))
-                conn.commit()
-                return True
+                # Получаем информацию о резервации
+                cur.execute(query_get_info, (reservation_id,))
+                result = cur.fetchone()
+                if result:
+                    user_id, coach_id = result
+                    
+                    # Удаляем резервацию
+                    cur.execute(query_delete, (reservation_id,))
+                    conn.commit()
+                    
+                    # Инвалидируем кэш
+                    invalidate_reservation_cache(user_id=user_id, coach_id=coach_id)
+                    return True
+                return False
     except Exception as e:
         st.error(f"Ошибка при отмене записи: {e}")
         return False
 
 # Функция для получения записей пользователя на корт
 def get_user_reservations(user_id):
+    # Сначала проверяем кэш
+    cached_reservations = get_cached_user_reservations(user_id)
+    if cached_reservations is not None:
+        return cached_reservations
+
     query = """
         SELECT r.reservation_id, r.reservation_time, r.duration, c.surface, r.court_id, co.name AS coach_name
         FROM reservations r
@@ -102,12 +131,20 @@ def get_user_reservations(user_id):
         with psycopg2.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
                 cur.execute(query, (user_id,))
-                return cur.fetchall()
+                reservations = cur.fetchall()
+                # Кэшируем результат
+                cache_user_reservations(user_id, reservations)
+                return reservations
     except Exception as e:
         st.error(f"Ошибка при получении записей: {e}")
         return []
 
 def get_all_reservations():
+    # Сначала проверяем кэш
+    cached_reservations = get_cached_all_reservations()
+    if cached_reservations is not None:
+        return cached_reservations
+
     query = """ 
         SELECT r.reservation_id, r.reservation_time, r.duration, c.surface, u.username, co.name AS coach_name
         FROM reservations r
@@ -120,7 +157,10 @@ def get_all_reservations():
         with psycopg2.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
                 cur.execute(query)
-                return cur.fetchall()
+                reservations = cur.fetchall()
+                # Кэшируем результат
+                cache_all_reservations(reservations)
+                return reservations
     except Exception as e:
         st.error(f"Ошибка при получении всех записей: {e}")
         return []

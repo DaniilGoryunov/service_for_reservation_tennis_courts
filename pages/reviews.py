@@ -1,11 +1,7 @@
 import streamlit as st
-import psycopg2
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from dotenv import load_dotenv
-import os
-from roles.user import *
-from services.reviews import *
+from roles.user import get_user_reservations
+from services.reviews import async_fetch_reviews, async_add_review
 
 def show_reviews():
     # Асинхронный вызов для получения отзывов

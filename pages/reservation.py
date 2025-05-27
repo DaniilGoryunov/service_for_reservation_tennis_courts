@@ -1,10 +1,10 @@
 import streamlit as st
 import datetime
 import os
-from services.reserv import *
-from services.in_table import *
-from roles.coach import *
-from roles.user import *
+from services.reserv import get_available_courts, reserve_user_court
+from services.in_table import fetch_ratings_for_court
+from roles.coach import get_available_coaches
+from roles.user import get_user_role
 
 def show_reservation_page():
     if 'reservation_date' not in st.session_state:

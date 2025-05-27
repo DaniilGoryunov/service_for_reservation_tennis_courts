@@ -1,9 +1,7 @@
 import streamlit as st
-from services.reserv import *
-from services.in_table import *
-from roles.admin import *
-from roles.coach import *
-from roles.user import*
+from roles.admin import admin_page
+from roles.coach import coach_page
+from roles.user import user_page, get_user_role
 
 def show_user_reservations_page():
     user_id = st.session_state.get("user_id")

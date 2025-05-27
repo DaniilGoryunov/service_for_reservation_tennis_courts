@@ -2,12 +2,44 @@ import streamlit as st
 import psycopg2
 from services.in_table import *
 from services.reserv import *
+from services.redis_service import (
+    get_cached_coach_reservations,
+    cache_coach_reservations,
+    invalidate_reservation_cache,
+    redis_client,
+    deserialize_from_json
+)
+import json
+
+def show_coach_cache_debug(coach_id):
+    """Показывает отладочную информацию о кэше резерваций тренера"""
+    if st.checkbox("Показать отладочную информацию кэша тренера"):
+        key = f"reservations:coach:{coach_id}"
+        value = redis_client.get(key)
+        ttl = redis_client.ttl(key)
+        
+        if value:
+            try:
+                reservations = deserialize_from_json(value)
+                st.write(f"🔍 Кэш резерваций тренера (TTL: {ttl} сек.):")
+                st.write(f"Количество резерваций в кэше: {len(reservations)}")
+                for i, res in enumerate(reservations, 1):
+                    st.code(f"Резервация #{i}:\n{json.dumps(res, indent=2, ensure_ascii=False, default=str)}")
+            except Exception as e:
+                st.error(f"Ошибка при разборе кэша: {str(e)}")
+        else:
+            st.info("В кэше нет данных о резервациях тренера")
 
 def coach_page(user_id):
-    reservations_coach = get_coach_reservations(get_coach_id_by_user_id(user_id))  # Получаем записи, где пользователь тренер
-    reservations_coach = filter_reservations(reservations_coach)
-    display_reservations(reservations_coach, role="coach")
-    reservations = get_user_reservations(user_id)  
+    coach_id = get_coach_id_by_user_id(user_id)
+    if coach_id:
+        reservations_coach = get_coach_reservations(coach_id)
+        reservations_coach = filter_reservations(reservations_coach)
+        display_reservations(reservations_coach, role="coach")
+        # Показываем отладочную информацию о кэше
+        show_coach_cache_debug(coach_id)
+    
+    reservations = get_user_reservations(user_id)
     display_reservations(reservations, role="user")
 
 
@@ -33,6 +65,11 @@ def get_available_coaches(reservation_time):
         return []
     
 def get_coach_reservations(coach_id):
+    # Сначала проверяем кэш
+    cached_reservations = get_cached_coach_reservations(coach_id)
+    if cached_reservations is not None:
+        return cached_reservations
+
     query = """
         SELECT r.reservation_id, r.reservation_time, r.duration, c.surface, ch.name, u.username AS user_name
         FROM reservations r
@@ -46,7 +83,10 @@ def get_coach_reservations(coach_id):
         with psycopg2.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
                 cur.execute(query, (coach_id,))
-                return cur.fetchall()
+                reservations = cur.fetchall()
+                # Кэшируем результат
+                cache_coach_reservations(coach_id, reservations)
+                return reservations
     except Exception as e:
         st.error(f"Ошибка при получении записей тренера: {e}")
         return []

@@ -1,11 +1,39 @@
 import streamlit as st
 from services.in_table import *
 from services.reserv import *
+from services.redis_service import (
+    get_cached_user_reservations,
+    cache_user_reservations,
+    redis_client,
+    deserialize_from_json
+)
+import json
+
+def show_user_cache_debug(user_id):
+    """Показывает отладочную информацию о кэше резерваций пользователя"""
+    if st.checkbox("Показать отладочную информацию кэша пользователя"):
+        key = f"reservations:user:{user_id}"
+        value = redis_client.get(key)
+        ttl = redis_client.ttl(key)
+        
+        if value:
+            try:
+                reservations = deserialize_from_json(value)
+                st.write(f"🔍 Кэш резерваций пользователя (TTL: {ttl} сек.):")
+                st.write(f"Количество резерваций в кэше: {len(reservations)}")
+                for i, res in enumerate(reservations, 1):
+                    st.code(f"Резервация #{i}:\n{json.dumps(res, indent=2, ensure_ascii=False, default=str)}")
+            except Exception as e:
+                st.error(f"Ошибка при разборе кэша: {str(e)}")
+        else:
+            st.info("В кэше нет данных о резервациях пользователя")
 
 # Страница для пользователя
 def user_page(user_id):
     reservations = get_user_reservations(user_id)  # Получаем записи пользователя
     display_reservations(reservations, role="user")
+    # Показываем отладочную информацию о кэше
+    show_user_cache_debug(user_id)
 
 # Функция управления пользователями
 def manage_users():
