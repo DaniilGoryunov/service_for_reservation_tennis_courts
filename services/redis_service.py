@@ -18,6 +18,14 @@ SESSION_TTL = 86400  # 24 часа
 CACHE_TTL = 300  # 5 минут
 RESERVATION_CACHE_TTL = 60  # 1 минута для резерваций
 
+# Константы для каналов уведомлений
+NOTIFICATION_CHANNELS = {
+    'new_reservation': 'notifications:new_reservation',
+    'cancel_reservation': 'notifications:cancel_reservation',
+    'coach_assigned': 'notifications:coach_assigned',
+    'court_available': 'notifications:court_available'
+}
+
 class DateTimeEncoder(json.JSONEncoder):
     """Кастомный JSON энкодер для datetime объектов"""
     def default(self, obj):
@@ -170,3 +178,80 @@ def invalidate_reservation_cache(user_id=None, coach_id=None):
     if coach_id:
         redis_client.delete(f"reservations:coach:{coach_id}")
     redis_client.delete("reservations:all")
+
+def publish_notification(event_type, data):
+    """Публикует уведомление в Redis PubSub"""
+    if event_type not in NOTIFICATION_CHANNELS:
+        raise ValueError(f"Неизвестный тип события: {event_type}")
+    
+    channel = NOTIFICATION_CHANNELS[event_type]
+    notification = {
+        'type': event_type,
+        'data': data,
+        'timestamp': datetime.now().isoformat()
+    }
+    redis_client.publish(channel, serialize_to_json(notification))
+    return notification
+
+def subscribe_to_notifications(event_types=None):
+    """Подписывается на уведомления указанных типов"""
+    if event_types is None:
+        event_types = NOTIFICATION_CHANNELS.keys()
+    
+    channels = [NOTIFICATION_CHANNELS[event_type] for event_type in event_types]
+    pubsub = redis_client.pubsub()
+    for channel in channels:
+        pubsub.subscribe(channel)
+    return pubsub
+
+def get_notification_handler():
+    """Создает обработчик уведомлений"""
+    def handle_notification(message):
+        if message['type'] == 'message':
+            try:
+                notification = deserialize_from_json(message['data'])
+                return notification
+            except Exception as e:
+                st.error(f"Ошибка при обработке уведомления: {e}")
+        return None
+    return handle_notification
+
+# Функции для конкретных типов уведомлений
+def notify_new_reservation(reservation_id, user_id, court_id, reservation_time, duration, coach_id=None):
+    """Отправляет уведомление о новой резервации"""
+    data = {
+        'reservation_id': reservation_id,
+        'user_id': user_id,
+        'court_id': court_id,
+        'reservation_time': reservation_time.isoformat(),
+        'duration': duration,
+        'coach_id': coach_id
+    }
+    return publish_notification('new_reservation', data)
+
+def notify_cancel_reservation(reservation_id, user_id, court_id, coach_id=None):
+    """Отправляет уведомление об отмене резервации"""
+    data = {
+        'reservation_id': reservation_id,
+        'user_id': user_id,
+        'court_id': court_id,
+        'coach_id': coach_id
+    }
+    return publish_notification('cancel_reservation', data)
+
+def notify_coach_assigned(reservation_id, coach_id, user_id):
+    """Отправляет уведомление о назначении тренера"""
+    data = {
+        'reservation_id': reservation_id,
+        'coach_id': coach_id,
+        'user_id': user_id
+    }
+    return publish_notification('coach_assigned', data)
+
+def notify_court_available(court_id, available_time):
+    """Отправляет уведомление о доступности корта"""
+    data = {
+        'court_id': court_id,
+        'available_time': available_time.isoformat()
+    }
+    return publish_notification('court_available', data)

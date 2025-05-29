@@ -7,7 +7,10 @@ from services.redis_service import (
     cache_user_reservations, get_cached_user_reservations,
     cache_coach_reservations, get_cached_coach_reservations,
     cache_all_reservations, get_cached_all_reservations,
-    invalidate_reservation_cache
+    invalidate_reservation_cache,
+    notify_new_reservation,
+    notify_cancel_reservation,
+    notify_coach_assigned
 )
 
 # Загружаем переменные окружения из файла .env
@@ -77,6 +80,11 @@ def reserve_user_court(user_id, court_id, reservation_time, duration, coach_id=N
                 # Инвалидируем кэш после создания новой резервации
                 invalidate_reservation_cache(user_id=user_id, coach_id=coach_id)
                 
+                # Отправляем уведомления
+                notify_new_reservation(reservation_id, user_id, court_id, reservation_time, duration, coach_id)
+                if coach_id:
+                    notify_coach_assigned(reservation_id, coach_id, user_id)
+                
                 return reservation_id
     except Exception as e:
         st.error(f"Ошибка при резервировании: {e}")
@@ -86,7 +94,7 @@ def reserve_user_court(user_id, court_id, reservation_time, duration, coach_id=N
 def cancel_reservation(reservation_id):
     # Сначала получаем информацию о резервации для инвалидации кэша
     query_get_info = """
-        SELECT user_id, coach_id FROM reservations WHERE reservation_id = %s;
+        SELECT user_id, court_id, coach_id FROM reservations WHERE reservation_id = %s;
     """
     query_delete = """
         DELETE FROM reservations WHERE reservation_id = %s;
@@ -98,7 +106,7 @@ def cancel_reservation(reservation_id):
                 cur.execute(query_get_info, (reservation_id,))
                 result = cur.fetchone()
                 if result:
-                    user_id, coach_id = result
+                    user_id, court_id, coach_id = result
                     
                     # Удаляем резервацию
                     cur.execute(query_delete, (reservation_id,))
@@ -106,6 +114,10 @@ def cancel_reservation(reservation_id):
                     
                     # Инвалидируем кэш
                     invalidate_reservation_cache(user_id=user_id, coach_id=coach_id)
+                    
+                    # Отправляем уведомление об отмене
+                    notify_cancel_reservation(reservation_id, user_id, court_id, coach_id)
+                    
                     return True
                 return False
     except Exception as e:
